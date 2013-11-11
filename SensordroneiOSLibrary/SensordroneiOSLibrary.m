@@ -264,21 +264,32 @@
 
 -(void) btleConnect:(CBPeripheral *)aPeripheral {
     dronePeripheral = aPeripheral;
-    if (![dronePeripheral isConnected]) {
+    if ([dronePeripheral state] == CBPeripheralStateConnected) {
         [btleManger connectPeripheral:dronePeripheral options:nil];
     }
+    // isConnected was depracated in iOS7
+//    if (![dronePeripheral isConnected]) {
+//        [btleManger connectPeripheral:dronePeripheral options:nil];
+//    }
 
 }
 
 -(void) disconnect {
-    if ([dronePeripheral isConnected]) {
+    if ([dronePeripheral state] == CBPeripheralStateConnected) {
         unsigned char command[] = {0x05, 0x08, 0x15,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00
         };
         [self sendLECommand:command :sizeof(command) :TYPE_DISCONNECT];
-            
     }
+    // isConnected was depracated in iOS7
+//    if ([dronePeripheral isConnected]) {
+//        unsigned char command[] = {0x05, 0x08, 0x15,
+//            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+//            0x00
+//        };
+//        [self sendLECommand:command :sizeof(command) :TYPE_DISCONNECT];
+//    }
 }
 
 -(void) checkIfDroneIsCharging {
@@ -976,13 +987,19 @@
     [self setHasResponse:NO];
     
     // Send command if device(!) is connected (not our logical isDroneConnected)
-    if ([myDrone.dronePeripheral isConnected]) {
+    if ([myDrone.dronePeripheral state] == CBPeripheralStateConnected) {
         [[myDrone dronePeripheral] writeValue:command forCharacteristic:[myDrone txCharacteristic] type:CBCharacteristicWriteWithoutResponse];
     } else {
         // Give up if not connected
         return;
     }
-  
+//    isConnected was depracated in iOS7
+//    if ([myDrone.dronePeripheral isConnected]) {
+//        [[myDrone dronePeripheral] writeValue:command forCharacteristic:[myDrone txCharacteristic] type:CBCharacteristicWriteWithoutResponse];
+//    } else {
+//        // Give up if not connected
+//        return;
+//    }
    
     // Wait for response
     while (![self hasResponse]) {

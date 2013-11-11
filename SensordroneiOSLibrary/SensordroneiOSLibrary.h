@@ -9,6 +9,12 @@
 #import <Foundation/Foundation.h>
 #import <CoreBluetooth/CoreBluetooth.h>
 
+// We have not yet implemented specific LE characteristics for different types of events,
+// so for now we make the asynchronous BLE behave like a FIFO type of operation, and use these
+// protocols to allow a user to decide what happens when a particular event occurs.
+//
+// They are optional, and this Library should check if the implementing class responds, and if so,
+// fire the method.
 @protocol DroneEventDelegate <NSObject>
 
 @optional
@@ -24,10 +30,10 @@
 -(void) doOnAmbientTemperatureEnabled;
 -(void) doOnAmbientTemperatureDisabled;
 // Humidity
--(void) doOnHuditiyMeasured;
+-(void) doOnHumidityMeasured;
 -(void) doOnHumidityStatusChecked;
--(void) doOnHuditiyEnabled;
--(void) doOnHuditiyDisabled;
+-(void) doOnHumidityEnabled;
+-(void) doOnHumidityDisabled;
 // Pressure
 -(void) doOnPressureMeasured;
 -(void) doOnPressureStatusChecked;
@@ -83,24 +89,23 @@
 -(void) doOnBatteryVoltageMeasured;
 -(void) donOnChargingStatusChecked;
 -(void) doOnLowBattery;
-
 @end
 
 @interface Drone : NSObject <CBCentralManagerDelegate, CBPeripheralDelegate, DroneEventDelegate> {
-    // Class instance variables go here
-
     id<DroneEventDelegate> delegate;
-
     NSMutableDictionary *ledColors;
-    
-    
 }
 
+// We need an operation queue to make BLE act like FIFO
 @property NSOperationQueue *jobQueue;
+// Our CoreBluetooth properties
 @property CBCentralManager *btleManger;
 @property CBPeripheral *dronePeripheral;
 @property CBUUID *droneCBUUID;
 @property id <DroneEventDelegate> delegate;
+// Our BLE characteristics and their UUIDs.
+// The 'Credits' are not really used, but are included here.
+// They basically behave as in indicator of the length of the tx read/write
 @property CBCharacteristic *txCharacteristic;
 @property CBUUID *txCharacteristicUUID;
 @property CBCharacteristic *txCreditCharacteristic;
@@ -115,6 +120,13 @@
 @property float precisionGasCalibrateSensitivity;
 @property int irVobj;
 
+// These are strings used to match a job event read/write type.
+// We Create an NSOperation that is of a specific type (i.e. temperature read).
+// We assign the NSOperation this string so it knows what it is / how to parse the result
+// once it is submitted.
+//
+// There is no reason these couldn't be changed to ints, or something else, as long as they
+// are unique, and lets the NSOperation know the 'type' so it can parse the result correctly.
 @property NSString *TYPE_GENERAL;
 
 @property NSString *TYPE_TEMPERATURE_MEASURE;
@@ -189,7 +201,7 @@
 
 
 
-// Our Core Bluetooth (realted) Methods
+// Our Core Bluetooth (related) Methods
 -(void) scanForDrones;
 -(void) stopScanningForDrones;
 -(void) btleConnect:(CBPeripheral *)aPeripheral;
@@ -369,19 +381,29 @@
 
 @end
 
-
+// The NSOperation we use to get data.
+//
+// The basic operation is that a job is submitted in a background queue of size 1
+// (all communication goes through this job queue).
+//
+// The NSOperation makes a call over BLE and blocks the background queue thread until it gets a response.
+// The response in the CoreBluetooth callback updates the NSOperation with the result, releases the lock on
+// the NSOperations thread, and it goes about it's business.
+//
 @interface leCommand : NSOperation
-
+// This is used as a semaphore
 @property NSCondition *commLock;
 
+//
 @property Drone *myDrone;
 @property NSData *command;
 @property NSString *sensorType;
 
-
+// BLE Response
 @property BOOL hasResponse;
 @property NSData *response;
 
+// A method to convert an Most Significant Byte and a Least Significant Byte to an int.
 -(int) convertToInt:(unsigned char)MSB :(unsigned char)LSB;
 
 @end
