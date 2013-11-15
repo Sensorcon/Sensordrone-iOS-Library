@@ -578,7 +578,6 @@
 -(void) enableOxidizingGas {
     unsigned char command[] = {0x05, 0x03, 0x18, 0x84, 0x00};
     [self sendLECommand:command:sizeof(command):TYPE_OXIDIZING_GAS_ENABLE];
-    
 }
 
 -(void) disableOxidizingGas {
