@@ -326,7 +326,7 @@
 -(void) measureOxidizingGas;
 
 @property  BOOL oxidizingGasStatus;
-@property float *measuredOxidizingGasInOhm;
+@property float measuredOxidizingGasInOhm;
 
 //
 // Reducing Gas
@@ -337,7 +337,7 @@
 -(void) measureReducingGas;
 
 @property  BOOL reducingGasStatus;
-@property float *measuredReducingGasInOhm;
+@property float measuredReducingGasInOhm;
 
 //
 // External ADC

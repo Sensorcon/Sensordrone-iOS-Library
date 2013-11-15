@@ -264,7 +264,7 @@
 
 -(void) btleConnect:(CBPeripheral *)aPeripheral {
     dronePeripheral = aPeripheral;
-    if ([dronePeripheral state] == CBPeripheralStateConnected) {
+    if ([dronePeripheral state] == CBPeripheralStateDisconnected) {
         [btleManger connectPeripheral:dronePeripheral options:nil];
     }
     // isConnected was depracated in iOS7
@@ -1371,6 +1371,60 @@
         // Also check for low battery here
     }
     
+    // Oxidizing Gas Sensor
+    else if ([[self sensorType] isEqualToString:[myDrone TYPE_OXIDIZING_GAS_ENABLE]]) {
+        [myDrone setOxidizingGasStatus:YES];
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            [myDrone notifyDelegate:@selector(doOnOxidizingGasEnabled)];
+        });
+    }
+    else if ([[self sensorType] isEqualToString:[myDrone TYPE_OXIDIZING_GAS_DISABLE]]) {
+        [myDrone setOxidizingGasStatus:NO];
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            [myDrone notifyDelegate:@selector(doOnOxidizingGasDisabled)];
+        });
+    }
+    else if ([[self sensorType] isEqualToString:[myDrone TYPE_OXIDIZING_GAS_MEASURE]]) {
+        // Notify
+        int MSB = responseData[4] & 0xff;
+        int LSB = responseData[3] & 0xff;
+        int ADC = (MSB << 8) + LSB;
+        float voltage = (float)ADC / 4095.0 * 3.3;
+        float resistance = (18000.0 * 3.3 / voltage) - 18000.0;
+        [myDrone setMeasuredOxidizingGasInOhm:resistance];
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            [myDrone notifyDelegate:@selector(doOnOxidizingGasMeasured)];
+        });
+    }
+    
+    // Reducing Gas Sensor
+    else if ([[self sensorType] isEqualToString:[myDrone TYPE_REDUCING_GAS_ENABLE]]) {
+        [myDrone setOxidizingGasStatus:YES];
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            [myDrone notifyDelegate:@selector(doOnOxidizingGasEnabled)];
+        });
+    }
+    else if ([[self sensorType] isEqualToString:[myDrone TYPE_REDUCING_GAS_DISABLE]]) {
+        [myDrone setOxidizingGasStatus:NO];
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            [myDrone notifyDelegate:@selector(doOnOxidizingGasDisabled)];
+        });
+    }
+    else if ([[self sensorType] isEqualToString:[myDrone TYPE_REDUCING_GAS_MEASURE]]) {
+        // Notify
+        int MSB = responseData[4] & 0xff;
+        int LSB = responseData[3] & 0xff;
+        int ADC = (MSB << 8) + LSB;
+        float voltage = (float)ADC / 4095.0 * 3.3;
+        float resistance = (270000.0 * 3.3 / voltage) - 270000.0;
+        [myDrone setMeasuredReducingGasInOhm:resistance];
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            [myDrone notifyDelegate:@selector(doOnOxidizingGasMeasured)];
+        });
+    }
+    
+    
+    /////////////////////////////////////////////////////////////////////////////////////
     else {
         // wah wah
     }
